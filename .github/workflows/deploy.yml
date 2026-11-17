@@ -28,9 +28,17 @@ jobs:
   deploy:
     name: Build and deploy to Netlify
     # workflow_dispatch has no workflow_run context, so allow it through.
+    #
+    # The `branches: [main]` filter above matches the HEAD branch name of the
+    # CI run, and a fork can name its PR branch `main`. Without the event and
+    # repository checks, such a PR would get its commit built and deployed
+    # here once CI passed. Only a push to this repository's main may deploy.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     environment:
       name: production
